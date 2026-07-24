@@ -13,3 +13,5 @@ const Input = ({ label, className = '', ...props }) => {
 };
 
 export default Input;
+
+// style updates
