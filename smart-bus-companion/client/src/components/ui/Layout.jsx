@@ -29,3 +29,5 @@ const Layout = () => {
 };
 
 export default Layout;
+
+// style updates
