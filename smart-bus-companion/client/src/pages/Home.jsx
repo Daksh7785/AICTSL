@@ -149,3 +149,5 @@ const Home = () => {
 };
 
 export default Home;
+
+// style updates
