@@ -42,6 +42,9 @@ app.use(pinoHttp);
 const apiRoutes = require('./routes/api');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const { swaggerUi, specs } = require('./swagger');
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 app.get('/api/health', (req, res) => {
   const isDbConnected = mongoose.connection.readyState === 1;

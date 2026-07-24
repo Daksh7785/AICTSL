@@ -41,8 +41,8 @@ Legend: ⬜ Not started · 🔶 In progress / partially done · ✅ Done & teste
 | # | Phase | Status |
 |---|---|---|
 | 17 | Data Layer Efficiency (Indexes, Queries, Connection Handling) | ✅ |
-| 18 | Runtime Performance: Caching, Rate Limiting & Socket.io Efficiency | ⬜ |
-| 19 | Reliability & Observability | ⬜ |
+| 18 | Runtime Performance: Caching, Rate Limiting & Socket.io Efficiency | ✅ |
+| 19 | Reliability & Observability | ✅ |
 
 ## Document 5 — Production-Readiness Pass (Smart-Bus-Companion-Production-Readiness-Pass.md)
 | # | Phase | Status |
@@ -51,7 +51,7 @@ Legend: ⬜ Not started · 🔶 In progress / partially done · ✅ Done & teste
 | 21 | Automated Testing (Frontend, E2E, Coverage) | ⬜ |
 | 22 | CI/CD Pipeline | ✅ |
 | 23 | Code Quality Tooling & Local Dev via Docker | ⬜ |
-| 24 | API Documentation (Swagger/OpenAPI + Postman) | ⬜ |
+| 24 | API Documentation (Swagger/OpenAPI + Postman) | ✅ |
 | 25 | Client-Side Data Layer (React Query + Axios) | ⬜ |
 | 26 | File Uploads for Complaint Evidence | ⬜ |
 | 27 | External Error Tracking (Sentry) | ⬜ |
@@ -71,9 +71,9 @@ Legend: ⬜ Not started · 🔶 In progress / partially done · ✅ Done & teste
 
 ## Quick Summary View
 - **Total phases:** 35 (0–34)
-- **Completed:** 17 / 35
+- **Completed:** 20 / 35
 - **In progress:** 3
-- **Not started:** 15
+- **Not started:** 12
 - **Last updated:** 2026-07-24
 
 ### Suggested "Minimum Viable Submission" Path

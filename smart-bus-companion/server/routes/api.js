@@ -34,6 +34,16 @@ router.get('/surge', (req, res) => {
   res.json(getSurgeConfig());
 });
 
+/**
+ * @swagger
+ * /api/stops:
+ *   get:
+ *     summary: Retrieve a list of all active stops
+ *     tags: [Stops]
+ *     responses:
+ *       200:
+ *         description: A list of stops.
+ */
 // 1. GET /api/stops
 router.get('/stops', async (req, res) => {
   try {
@@ -69,6 +79,31 @@ router.get('/stops/nearby', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/search:
+ *   get:
+ *     summary: Search for routes between two stops
+ *     tags: [Search]
+ *     parameters:
+ *       - in: query
+ *         name: from
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Origin stop ID
+ *       - in: query
+ *         name: to
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Destination stop ID
+ *     responses:
+ *       200:
+ *         description: A list of matching routes.
+ *       400:
+ *         description: Missing required parameters.
+ */
 // 3. GET /api/search?from=stopId&to=stopId
 router.get('/search', searchLimiter, async (req, res) => {
   try {
