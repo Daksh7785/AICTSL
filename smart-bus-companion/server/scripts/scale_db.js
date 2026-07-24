@@ -146,3 +146,5 @@ const scaleDB = async () => {
 };
 
 scaleDB();
+
+// style updates
