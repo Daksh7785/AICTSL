@@ -22,7 +22,7 @@ async function startBusSimulator(io) {
 
   try {
     // 1. Fetch all routes and populate their stops to get coordinates
-    const routes = await Route.find().populate('stops.stopId');
+    const routes = await Route.find({ deletedAt: null }).populate('stops.stopId');
     if (!routes || routes.length === 0) {
       logger.info('No routes found for simulation. Waiting...');
       return;
