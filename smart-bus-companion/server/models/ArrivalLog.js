@@ -46,3 +46,5 @@ const arrivalLogSchema = new mongoose.Schema({
 arrivalLogSchema.index({ routeId: 1, stopId: 1, dayOfWeek: 1, hourOfDay: 1 });
 
 module.exports = mongoose.model('ArrivalLog', arrivalLogSchema);
+
+// style updates
