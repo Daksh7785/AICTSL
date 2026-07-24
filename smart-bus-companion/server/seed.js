@@ -332,3 +332,5 @@ const seedDB = async () => {
 };
 
 seedDB();
+
+// style updates
