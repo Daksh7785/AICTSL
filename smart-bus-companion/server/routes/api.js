@@ -191,6 +191,7 @@ router.get('/routes/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
 
 
 // 5. GET /api/routes/:id/predicted-eta?stopId=
@@ -221,10 +222,6 @@ router.get('/routes/:id/predicted-eta', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-const Complaint = require('../models/Complaint');
-const ServiceAlert = require('../models/ServiceAlert');
-const { auth, isAdmin } = require('../middleware/auth');
 
 // POST /api/complaints
 router.post('/complaints', async (req, res) => {
