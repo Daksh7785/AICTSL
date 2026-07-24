@@ -19,3 +19,5 @@ const connectDB = async () => {
 };
 
 module.exports = connectDB;
+
+// style updates
