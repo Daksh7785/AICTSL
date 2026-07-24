@@ -1,32 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { AlertTriangle, Info } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
 const AlertBanner = () => {
-  const [alerts, setAlerts] = useState([]);
-  const [surge, setSurge] = useState(null);
+  const [liveAlerts, setLiveAlerts] = useState([]);
+  const [liveSurge, setLiveSurge] = useState(null);
+
+  const { data: initialAlerts = [] } = useQuery({
+    queryKey: ['activeAlerts'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/alerts/active');
+      return Array.isArray(data) ? data : [];
+    }
+  });
+
+  const { data: initialSurge = null } = useQuery({
+    queryKey: ['surgeConfig'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/surge');
+      return data;
+    }
+  });
 
   useEffect(() => {
-    // Initial fetch of active alerts
-    fetch('/api/alerts/active')
-      .then(res => res.json())
-      .then(data => {
-        setAlerts(Array.isArray(data) ? data : []);
-      })
-      .catch(console.error);
-
-    // Initial fetch of surge config
-    fetch('/api/surge')
-      .then(res => res.json())
-      .then(data => setSurge(data))
-      .catch(console.error);
-
     // Setup Socket.io for live updates
     const socketUrl = import.meta.env.DEV ? 'http://localhost:5000' : '/';
     const socket = io(socketUrl);
 
     socket.on('newServiceAlert', (alert) => {
-      setAlerts(prev => {
+      setLiveAlerts(prev => {
         if (!alert.active) return prev.filter(a => a._id !== alert._id);
         const exists = prev.find(a => a._id === alert._id);
         if (exists) return prev.map(a => a._id === alert._id ? alert : a);
@@ -35,11 +39,22 @@ const AlertBanner = () => {
     });
 
     socket.on('surgeUpdate', (newSurge) => {
-      setSurge(newSurge);
+      setLiveSurge(newSurge);
     });
 
     return () => socket.disconnect();
   }, []);
+
+  // Merge live data with initial fetched data
+  const surge = liveSurge !== null ? liveSurge : initialSurge;
+  
+  // For alerts, liveAlerts takes precedence if it exists in live updates, otherwise fallback to initial
+  const alerts = [...liveAlerts];
+  initialAlerts.forEach(a => {
+    if (!alerts.find(la => la._id === a._id)) {
+      alerts.push(a);
+    }
+  });
 
   if (alerts.length === 0 && (!surge || !surge.isActive)) return null;
 
@@ -72,5 +87,3 @@ const AlertBanner = () => {
 };
 
 export default AlertBanner;
-
-// style updates

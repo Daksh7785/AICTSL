@@ -48,11 +48,11 @@ Legend: ⬜ Not started · 🔶 In progress / partially done · ✅ Done & teste
 | # | Phase | Status |
 |---|---|---|
 | 20 | Auth Hardening (refresh tokens, httpOnly cookies, password reset) | ✅ |
-| 21 | Automated Testing (Frontend, E2E, Coverage) | ⬜ |
+| 21 | Automated Testing (Frontend, E2E, Coverage) | ✅ |
 | 22 | CI/CD Pipeline | ✅ |
-| 23 | Code Quality Tooling & Local Dev via Docker | ⬜ |
+| 23 | Code Quality Tooling & Local Dev via Docker | ✅ |
 | 24 | API Documentation (Swagger/OpenAPI + Postman) | ✅ |
-| 25 | Client-Side Data Layer (React Query + Axios) | ⬜ |
+| 25 | Client-Side Data Layer (React Query + Axios) | ✅ |
 | 26 | File Uploads for Complaint Evidence | ⬜ |
 | 27 | External Error Tracking (Sentry) | ⬜ |
 | 28 | GTFS Export | ⬜ |
