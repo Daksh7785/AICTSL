@@ -14,10 +14,6 @@ export default {
         'alert-red': 'var(--alert-red)',
         'paper': 'var(--paper)',
         'ink': 'var(--ink)',
-        // Keep old ones just in case they're used in unmodified files
-        primary: '#0B3D91',
-        accent: '#FFC107',
-        alert: '#E53935',
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
