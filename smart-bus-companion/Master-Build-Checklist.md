@@ -9,11 +9,11 @@ Legend: ⬜ Not started · 🔶 In progress / partially done · ✅ Done & teste
 ## Document 1 — Core Build (Smart-Bus-Companion-Antigravity-Prompts.md)
 | # | Phase | Status |
 |---|---|---|
-| 0 | Project Foundation & Design System | 🔶 |
+| 0 | Project Foundation & Design System | ✅ |
 | 1 | Database Models & Realistic Seed Data | ✅ |
-| 2 | Route Search, Fare Calculation & Core UI | 🔶 |
-| 3 | Live Bus Tracking (Simulated, Real-GPS-Ready) | 🔶 |
-| 4 | Complaints, Public Accountability & Service Alerts | 🔶 |
+| 2 | Route Search, Fare Calculation & Core UI | ✅ |
+| 3 | Live Bus Tracking (Simulated, Real-GPS-Ready) | ✅ |
+| 4 | Complaints, Public Accountability & Service Alerts | ✅ |
 | 5 | Admin Analytics Dashboard | ✅ |
 | 6 | Differentiator Features (Accessibility, Language, Crowding, Notify Me) | ✅ |
 | 7 | PWA, Offline Support & Performance | ✅ |
@@ -27,7 +27,7 @@ Legend: ⬜ Not started · 🔶 In progress / partially done · ✅ Done & teste
 | 9 | Predictive ETA Engine | ✅ |
 | 10 | Occupancy Forecasting & Multimodal Metro Integration | ✅ |
 | 11 | Festival & Event Surge Mode | ✅ |
-| 12 | WhatsApp / SMS Fallback Channel | ⬜ |
+| 12 | WhatsApp / SMS Fallback Channel | ✅ |
 | 13 | Voice Search (Hindi + English) | ✅ |
 | 14 | Campus Chips, Predictive Maintenance Insight & Final Polish | ✅ |
 
@@ -54,10 +54,10 @@ Legend: ⬜ Not started · 🔶 In progress / partially done · ✅ Done & teste
 | 24 | API Documentation (Swagger/OpenAPI + Postman) | ✅ |
 | 25 | Client-Side Data Layer (React Query + Axios) | ✅ |
 | 26 | File Uploads for Complaint Evidence | ✅ |
-| 27 | External Error Tracking (Sentry) | ⬜ |
-| 28 | GTFS Export | ⬜ |
+| 27 | External Error Tracking (Sentry) | ✅ |
+| 28 | GTFS Export | ✅ |
 | 29 | Migrations & Secrets Hygiene | ✅ |
-| 30 | Accessibility Audit | ⬜ |
+| 30 | Accessibility Audit | ✅ |
 
 ## Document 6 — Database Architecture Pass (Smart-Bus-Companion-Database-Architecture-Pass.md)
 | # | Phase | Status |

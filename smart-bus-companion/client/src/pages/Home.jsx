@@ -4,14 +4,15 @@ import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { Mic } from 'lucide-react';
 
-const AutocompleteInput = ({ label, value, onChange, onSelect, options, placeholder }) => {
+const AutocompleteInput = ({ id, label, value, onChange, onSelect, options, placeholder }) => {
   const [showOptions, setShowOptions] = useState(false);
 
   return (
     <div className="relative flex flex-col mb-4">
-      {label && <label className="mb-1 text-sm font-semibold text-transit-ink">{label}</label>}
+      {label && <label htmlFor={id} className="mb-1 text-sm font-semibold text-transit-ink">{label}</label>}
       <div className="relative">
         <input
+          id={id}
           type="text"
           value={value}
           onChange={(e) => { onChange(e.target.value); setShowOptions(true); }}
@@ -19,6 +20,10 @@ const AutocompleteInput = ({ label, value, onChange, onSelect, options, placehol
           onBlur={() => setTimeout(() => setShowOptions(false), 200)}
           placeholder={placeholder}
           className="w-full px-3 py-3 pr-10 bg-white border-2 border-gray-200 rounded-md focus:outline-none focus:border-transit-ink transition-colors text-lg font-mono-data"
+          role="combobox"
+          aria-expanded={showOptions && options.length > 0}
+          aria-controls={`${id}-listbox`}
+          aria-autocomplete="list"
         />
         {('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) && (
           <button 
@@ -37,16 +42,18 @@ const AutocompleteInput = ({ label, value, onChange, onSelect, options, placehol
               };
             }}
             title="Search by Voice (English/Hindi)"
+            aria-label={`Voice search for ${label}`}
           >
-            <Mic className="w-5 h-5" />
+            <Mic className="w-5 h-5" aria-hidden="true" />
           </button>
         )}
       </div>
       {showOptions && options.length > 0 && (
-        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto top-full mt-1">
+        <ul id={`${id}-listbox`} role="listbox" className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto top-full mt-1">
           {options.map((opt) => (
             <li
               key={opt._id}
+              role="option"
               onClick={() => { onSelect(opt); setShowOptions(false); }}
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
             >
@@ -148,6 +155,7 @@ const Home = () => {
         <h1 className="text-xl font-bold text-transit-ink mb-6 text-center font-display">Plan Your Journey</h1>
         <form onSubmit={handleSearch}>
           <AutocompleteInput
+            id="from-stop"
             label="From"
             placeholder="Starting bus stop"
             value={fromQuery}
@@ -156,6 +164,7 @@ const Home = () => {
             options={getOptions(fromQuery)}
           />
           <AutocompleteInput
+            id="to-stop"
             label="To"
             placeholder="Destination bus stop"
             value={toQuery}

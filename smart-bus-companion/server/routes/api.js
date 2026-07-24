@@ -432,6 +432,69 @@ router.delete('/routes/:id', [auth, isAdmin], async (req, res) => {
   }
 });
 
+// GET /api/gtfs/export
+router.get('/gtfs/export', async (req, res) => {
+  try {
+    const archiver = require('archiver');
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    res.attachment('gtfs.zip');
+    archive.pipe(res);
+
+    // 1. stops.txt
+    // stop_id,stop_name,stop_lat,stop_lon
+    const stops = await Stop.find({ deletedAt: null }).lean();
+    let stopsCsv = 'stop_id,stop_name,stop_lat,stop_lon\n';
+    stops.forEach(stop => {
+      if (stop.location && stop.location.coordinates) {
+        stopsCsv += `${stop._id},"${stop.name}",${stop.location.coordinates[1]},${stop.location.coordinates[0]}\n`;
+      }
+    });
+    archive.append(stopsCsv, { name: 'stops.txt' });
+
+    // 2. routes.txt
+    // route_id,route_short_name,route_long_name,route_type
+    // route_type: 3 is Bus
+    const routes = await Route.find({ deletedAt: null }).lean();
+    let routesCsv = 'route_id,route_short_name,route_long_name,route_type\n';
+    routes.forEach(route => {
+      routesCsv += `${route._id},"${route.routeNumber}","${route.name}",3\n`;
+    });
+    archive.append(routesCsv, { name: 'routes.txt' });
+
+    await archive.finalize();
+  } catch (error) {
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
+// POST /api/sms/webhook
+router.post('/sms/webhook', express.urlencoded({ extended: false }), async (req, res) => {
+  const twilio = require('twilio');
+  const MessagingResponse = twilio.twiml.MessagingResponse;
+  const twiml = new MessagingResponse();
+
+  try {
+    const incomingMessage = req.body.Body ? req.body.Body.trim().toLowerCase() : '';
+    
+    if (incomingMessage.startsWith('eta')) {
+      // Expected format: ETA <Stop Name>
+      twiml.message('Smart Bus Companion: Your bus is arriving shortly.');
+    } else if (incomingMessage.startsWith('route')) {
+      twiml.message('Smart Bus Companion: Route details sent. Visit aictsl.com for more info.');
+    } else {
+      twiml.message('Welcome to Smart Bus Companion. Reply ETA <Stop> or ROUTE <No> for info.');
+    }
+  } catch (err) {
+    console.error('SMS Webhook Error:', err);
+    twiml.message('Sorry, we could not process your request at this time.');
+  }
+
+  res.type('text/xml').send(twiml.toString());
+});
+
 module.exports = router;
 
 // style updates

@@ -12,6 +12,15 @@ const mongoose = require('mongoose');
 const http = require('http');
 const { Server } = require('socket.io');
 const { startBusSimulator } = require('./services/busSimulator');
+const Sentry = require('@sentry/node');
+
+// Initialize Sentry early
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 1.0,
+  });
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -81,6 +90,9 @@ io.on('connection', (socket) => {
 });
 
 const errorHandler = require('./middleware/errorHandler');
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
 app.use(errorHandler);
 
 // Database Connection
