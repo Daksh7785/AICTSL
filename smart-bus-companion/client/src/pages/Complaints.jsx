@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import { fetchWithAuth } from '../lib/fetchWithAuth';
 
 const Complaints = () => {
   const [activeTab, setActiveTab] = useState('submit'); // 'submit' or 'track'
@@ -20,7 +21,7 @@ const Complaints = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/complaints', {
+      const res = await fetchWithAuth('/api/complaints', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ routeId: routeId || null, category, description, rating })
@@ -43,7 +44,7 @@ const Complaints = () => {
     setTrackError('');
     setTrackResult(null);
     try {
-      const res = await fetch(`/api/complaints/track/${trackId}`);
+      const res = await fetchWithAuth(`/api/complaints/track/${trackId}`);
       const data = await res.json();
       if (res.ok) {
         setTrackResult(data);

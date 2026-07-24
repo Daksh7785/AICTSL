@@ -5,7 +5,11 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   passwordHash: { type: String, required: true },
   role: { type: String, enum: ['commuter', 'admin'], default: 'commuter' },
-  preferredLanguage: { type: String, enum: ['en', 'hi'], default: 'en' }
+  preferredLanguage: { type: String, enum: ['en', 'hi'], default: 'en' },
+  isVerified: { type: Boolean, default: false },
+  verificationToken: String,
+  resetPasswordToken: String,
+  resetPasswordExpires: Date
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -17,12 +17,14 @@ const AdminLogin = () => {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        credentials: 'include' // Allow cookies
       });
       const data = await res.json();
       
       if (res.ok) {
-        localStorage.setItem('adminToken', data.token);
+        // Cookies are set automatically by the browser
+        localStorage.setItem('userRole', data.role); // Store role safely without token
         navigate('/admin');
       } else {
         setError(data.error || 'Login failed');
@@ -59,6 +61,9 @@ const AdminLogin = () => {
               onChange={e => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
             />
+          </div>
+          <div className="flex justify-end">
+            <a href="/forgot-password" className="text-sm text-primary hover:underline">Forgot password?</a>
           </div>
           <Button type="submit" className="w-full">Sign In</Button>
         </form>
