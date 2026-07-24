@@ -108,3 +108,5 @@ const SearchResults = () => {
 };
 
 export default SearchResults;
+
+// style updates
