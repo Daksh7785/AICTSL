@@ -7,6 +7,25 @@ const errorHandler = (err, req, res, next) => {
     return next(err);
   }
 
+  // Handle Mongoose Validation Error specifically
+  if (err.name === 'ValidationError') {
+    const errors = {};
+    for (const key in err.errors) {
+      errors[key] = err.errors[key].message;
+    }
+    return res.status(400).json({
+      error: 'Validation Error',
+      details: errors
+    });
+  }
+  
+  // Handle CastError (invalid ObjectId, etc)
+  if (err.name === 'CastError') {
+    return res.status(400).json({
+      error: 'Invalid ID format'
+    });
+  }
+
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
