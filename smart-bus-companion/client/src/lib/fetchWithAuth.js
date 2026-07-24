@@ -27,3 +27,5 @@ export const fetchWithAuth = async (url, options = {}) => {
 
   return response;
 };
+
+// style updates
