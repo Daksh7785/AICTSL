@@ -53,3 +53,5 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
+
+// style updates
