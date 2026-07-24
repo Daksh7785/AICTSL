@@ -57,3 +57,5 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
+
+// style updates
