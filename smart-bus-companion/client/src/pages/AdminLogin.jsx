@@ -73,3 +73,5 @@ const AdminLogin = () => {
 };
 
 export default AdminLogin;
+
+// style updates
