@@ -49,3 +49,5 @@ async function predictDelay(routeId, stopId, dayOfWeek, hourOfDay) {
 }
 
 module.exports = { predictDelay };
+
+// style updates
