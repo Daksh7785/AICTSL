@@ -9,3 +9,5 @@ const Card = ({ children, className = '' }) => {
 };
 
 export default Card;
+
+// style updates
