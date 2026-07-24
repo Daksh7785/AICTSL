@@ -3,10 +3,10 @@ import React from 'react';
 const Badge = ({ children, variant = 'default', className = '' }) => {
   const variants = {
     default: 'bg-gray-100 text-gray-800',
-    success: 'bg-green-100 text-green-800',
-    alert: 'bg-red-100 text-red-800',
-    warning: 'bg-yellow-100 text-yellow-800',
-    primary: 'bg-blue-100 text-primary',
+    success: 'bg-transit-green/10 text-transit-green',
+    alert: 'bg-alert-red/10 text-alert-red',
+    warning: 'bg-signal-amber/20 text-yellow-800',
+    primary: 'bg-transit-ink/10 text-transit-ink',
   };
 
   return (
