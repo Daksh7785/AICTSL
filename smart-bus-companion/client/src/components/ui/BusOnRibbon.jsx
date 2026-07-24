@@ -37,3 +37,5 @@ const BusOnRibbon = ({ color = 'var(--signal-amber)', className = '' }) => {
 };
 
 export default BusOnRibbon;
+
+// style updates
