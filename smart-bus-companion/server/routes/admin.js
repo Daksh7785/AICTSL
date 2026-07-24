@@ -118,4 +118,202 @@ router.post('/surge', [auth, isAdmin], (req, res, next) => {
   }
 });
 
+const Stop = require('../models/Stop');
+
+// ==========================================
+// STOPS MANAGEMENT
+// ==========================================
+
+// POST /api/admin/stops - Create a new stop
+router.post('/stops', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const stop = new Stop({
+      ...req.body,
+      createdBy: req.user.id
+    });
+    await stop.save();
+    res.status(201).json(stop);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/admin/stops/:id - Update an existing stop
+router.put('/stops/:id', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const stop = await Stop.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, updatedBy: req.user.id },
+      { new: true, runValidators: true }
+    );
+    if (!stop) return res.status(404).json({ error: 'Stop not found' });
+    res.json(stop);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==========================================
+// ROUTES MANAGEMENT
+// ==========================================
+
+// POST /api/admin/routes - Create a new route
+router.post('/routes', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const route = new Route({
+      ...req.body,
+      createdBy: req.user.id
+    });
+    await route.save();
+    res.status(201).json(route);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/admin/routes/:id - Update an existing route
+router.put('/routes/:id', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const route = await Route.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, updatedBy: req.user.id },
+      { new: true, runValidators: true }
+    );
+    if (!route) return res.status(404).json({ error: 'Route not found' });
+    res.json(route);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==========================================
+// BUSES MANAGEMENT
+// ==========================================
+
+// GET /api/admin/buses - List all buses
+router.get('/buses', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const query = {};
+    if (req.query.status) query.status = req.query.status;
+    if (req.query.routeId) query.routeId = req.query.routeId;
+
+    const buses = await Bus.find(query)
+      .sort({ busNumber: 1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('routeId', 'routeNumber name')
+      .lean();
+
+    const total = await Bus.countDocuments(query);
+    res.json({ buses, total, page, pages: Math.ceil(total / limit) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/admin/buses - Register a new bus
+router.post('/buses', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const bus = new Bus(req.body);
+    await bus.save();
+    res.status(201).json(bus);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/admin/buses/:id - Update bus details
+router.put('/buses/:id', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const bus = await Bus.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, lastUpdated: Date.now() },
+      { new: true, runValidators: true }
+    );
+    if (!bus) return res.status(404).json({ error: 'Bus not found' });
+    res.json(bus);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/admin/buses/:id - Delete a bus
+router.delete('/buses/:id', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const bus = await Bus.findByIdAndDelete(req.params.id);
+    if (!bus) return res.status(404).json({ error: 'Bus not found' });
+    res.json({ message: 'Bus deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ==========================================
+// USERS MANAGEMENT
+// ==========================================
+
+// GET /api/admin/users - List all registered users
+router.get('/users', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const query = { deletedAt: null };
+    if (req.query.role) query.role = req.query.role;
+
+    const users = await User.find(query)
+      .select('-passwordHash -resetPasswordToken')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const total = await User.countDocuments(query);
+    res.json({ users, total, page, pages: Math.ceil(total / limit) });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PUT /api/admin/users/:id/role - Update user role
+router.put('/users/:id/role', [auth, isAdmin], async (req, res, next) => {
+  try {
+    if (!['commuter', 'admin'].includes(req.body.role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role: req.body.role },
+      { new: true, runValidators: true }
+    ).select('-passwordHash');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/admin/users/:id - Delete a user
+router.delete('/users/:id', [auth, isAdmin], async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    if (user._id.toString() === req.user.id) {
+      return res.status(403).json({ error: 'Cannot delete yourself' });
+    }
+
+    user.deletedAt = new Date();
+    await user.save();
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
