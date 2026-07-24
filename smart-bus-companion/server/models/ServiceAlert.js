@@ -29,3 +29,5 @@ serviceAlertSchema.pre('save', async function(next) {
 });
 
 module.exports = mongoose.model('ServiceAlert', serviceAlertSchema);
+
+// style updates
