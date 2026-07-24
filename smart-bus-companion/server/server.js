@@ -23,21 +23,25 @@ const io = new Server(server, {
 });
 app.set('io', io); // Attach io to app for use in routes
 
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+
 // Middleware
+app.use(helmet());
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(mongoSanitize());
+app.use(xss());
 app.use(pinoHttp);
 
 const apiRoutes = require('./routes/api');
 const authRoutes = require('./routes/auth');
-
-// Routes
-app.use('/api', apiRoutes);
-app.use('/api/auth', authRoutes);
+const adminRoutes = require('./routes/admin');
 
 app.get('/api/health', (req, res) => {
   const isDbConnected = mongoose.connection.readyState === 1;
@@ -47,6 +51,10 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime()
   });
 });
+
+app.use('/api', apiRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 io.on('connection', (socket) => {
   logger.info(`Client connected to tracking socket: ${socket.id}`);
@@ -70,17 +78,23 @@ const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
 // Database Connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    logger.info('Connected to MongoDB');
-    startBusSimulator(io);
-  })
-  .catch(err => logger.error({ err }, 'MongoDB connection error'));
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+      logger.info('Connected to MongoDB');
+      startBusSimulator(io);
+    })
+    .catch(err => logger.error({ err }, 'MongoDB connection error'));
+}
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = { app, server };
 
 // Graceful Shutdown
 const shutdown = async (signal) => {

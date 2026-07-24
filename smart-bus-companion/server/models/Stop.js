@@ -14,6 +14,7 @@ const stopSchema = new mongoose.Schema({
       required: [true, 'Coordinates [lng, lat] are required'] 
     } // [longitude, latitude]
   },
+  isMetroInterchange: { type: Boolean, default: false },
   deletedAt: { type: Date, default: null },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }

@@ -104,7 +104,7 @@ router.post('/login', async (req, res) => {
     // Save refresh token
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
-    await RefreshToken.create({ token: refreshToken, user: user._id, expiresAt });
+    await RefreshToken.create({ token: refreshToken, userId: user._id, expiresAt });
 
     res.cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
     res.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
@@ -122,7 +122,7 @@ router.post('/refresh', async (req, res) => {
     const token = req.cookies.refreshToken;
     if (!token) return res.status(401).json({ error: 'No refresh token provided' });
 
-    const existingToken = await RefreshToken.findOne({ token }).populate('user');
+    const existingToken = await RefreshToken.findOne({ token }).populate('userId');
     if (!existingToken) {
       return res.status(401).json({ error: 'Invalid refresh token' });
     }
@@ -136,16 +136,16 @@ router.post('/refresh', async (req, res) => {
 
     // Rotate token
     await RefreshToken.deleteOne({ _id: existingToken._id });
-    const { accessToken, refreshToken } = generateTokens(existingToken.user);
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(existingToken.userId);
     
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
-    await RefreshToken.create({ token: refreshToken, user: existingToken.user._id, expiresAt });
+    await RefreshToken.create({ token: newRefreshToken, userId: existingToken.userId._id, expiresAt });
 
     res.cookie('accessToken', accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 });
-    res.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    res.cookie('refreshToken', newRefreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
 
-    res.json({ role: existingToken.user.role, isVerified: existingToken.user.isVerified, name: existingToken.user.name });
+    res.json({ role: existingToken.userId.role, isVerified: existingToken.userId.isVerified, name: existingToken.userId.name });
   } catch (error) {
     req.log.error(error);
     res.status(500).json({ error: 'Server error' });

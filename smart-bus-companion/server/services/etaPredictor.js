@@ -39,7 +39,13 @@ async function predictDelay(routeId, stopId, dayOfWeek, hourOfDay) {
     totalWeight += weight;
   });
 
-  const avgDelayMs = weightedDelaySum / totalWeight;
+  let avgDelayMs = weightedDelaySum / totalWeight;
+
+  const { getSurgeConfig } = require('./surgeManager');
+  const surge = getSurgeConfig();
+  if (surge && surge.isActive && surge.multiplier) {
+    avgDelayMs = avgDelayMs / surge.multiplier;
+  }
 
   let confidence = 'low';
   if (logs.length > 5) confidence = 'medium';

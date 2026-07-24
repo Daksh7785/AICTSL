@@ -24,6 +24,8 @@ const busSchema = new mongoose.Schema({
     },
     default: 'running' 
   },
+  mileageKm: { type: Number, default: 0 },
+  lastMaintenanceDate: { type: Date, default: Date.now },
   lastUpdated: { type: Date, default: Date.now }
 });
 

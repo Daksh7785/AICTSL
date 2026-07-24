@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
+import { Mic } from 'lucide-react';
 
 const AutocompleteInput = ({ label, value, onChange, onSelect, options, placeholder }) => {
   const [showOptions, setShowOptions] = useState(false);
@@ -9,15 +10,38 @@ const AutocompleteInput = ({ label, value, onChange, onSelect, options, placehol
   return (
     <div className="relative flex flex-col mb-4">
       {label && <label className="mb-1 text-sm font-semibold text-transit-ink">{label}</label>}
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => { onChange(e.target.value); setShowOptions(true); }}
-        onFocus={() => setShowOptions(true)}
-        onBlur={() => setTimeout(() => setShowOptions(false), 200)}
-        placeholder={placeholder}
-        className="px-3 py-3 bg-white border-2 border-gray-200 rounded-md focus:outline-none focus:border-transit-ink transition-colors text-lg font-mono-data"
-      />
+      <div className="relative">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => { onChange(e.target.value); setShowOptions(true); }}
+          onFocus={() => setShowOptions(true)}
+          onBlur={() => setTimeout(() => setShowOptions(false), 200)}
+          placeholder={placeholder}
+          className="w-full px-3 py-3 pr-10 bg-white border-2 border-gray-200 rounded-md focus:outline-none focus:border-transit-ink transition-colors text-lg font-mono-data"
+        />
+        {('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) && (
+          <button 
+            type="button"
+            className="absolute right-3 top-3.5 text-gray-400 hover:text-transit-ink"
+            onClick={(e) => {
+              e.preventDefault();
+              const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+              const recognition = new SpeechRecognition();
+              recognition.lang = 'hi-IN'; // Supports Hindi + English (Hinglish) natively well
+              recognition.start();
+              recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                onChange(transcript);
+                setShowOptions(true);
+              };
+            }}
+            title="Search by Voice (English/Hindi)"
+          >
+            <Mic className="w-5 h-5" />
+          </button>
+        )}
+      </div>
       {showOptions && options.length > 0 && (
         <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto top-full mt-1">
           {options.map((opt) => (
@@ -143,6 +167,35 @@ const Home = () => {
             Find Routes
           </Button>
         </form>
+
+        <div className="mt-6">
+          <p className="text-sm text-gray-500 mb-3 font-semibold uppercase tracking-wider">Quick Destinations</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: 'IIT Indore', query: 'IIT' },
+              { label: 'IIM Indore', query: 'IIM' },
+              { label: 'DAVV Campus', query: 'Bhawarkuan' },
+              { label: 'SGSITS', query: 'SGSITS' }
+            ].map(campus => (
+              <button
+                key={campus.label}
+                type="button"
+                onClick={() => {
+                  const match = stops.find(s => s.name.toLowerCase().includes(campus.query.toLowerCase()));
+                  if (match) {
+                    setToStop(match);
+                    setToQuery(match.name);
+                  } else {
+                    setToQuery(campus.label);
+                  }
+                }}
+                className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 text-transit-ink rounded-full transition-colors border border-gray-300"
+              >
+                {campus.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

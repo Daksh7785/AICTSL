@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Map, Clock, IndianRupee, Accessibility } from 'lucide-react';
+import { Map, Clock, IndianRupee, Accessibility, Bell, Train } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import BusOnRibbon from '../components/ui/BusOnRibbon';
 import RouteChip from '../components/ui/RouteChip';
+import { usePreferences } from '../context/PreferencesContext';
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const from = searchParams.get('from');
   const to = searchParams.get('to');
+  const { t } = usePreferences();
   
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,10 +30,14 @@ const SearchResults = () => {
       .finally(() => setLoading(false));
   }, [from, to]);
 
+  const handleNotify = () => {
+    alert(t('bus.notify') + ": You will be alerted when the bus is 5 minutes away.");
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center mt-12 px-8">
-        <BusOnRibbon color="var(--transit-ink)" />
+        <BusOnRibbon color="var(--transit-ink)" occupancy="low" />
       </div>
     );
   }
@@ -74,7 +80,22 @@ const SearchResults = () => {
                 <div className="flex items-center gap-3 mb-2">
                   <RouteChip routeNumber={route.routeNumber} colorHex={route.colorHex} />
                   {route.isWheelchairAccessible && (
-                    <Accessibility className="w-5 h-5 text-transit-green" aria-label="Wheelchair Accessible" />
+                    <Accessibility className="w-5 h-5 text-transit-green" aria-label="Wheelchair Accessible" title="Wheelchair Accessible" />
+                  )}
+                  {route.hasMetroInterchange && (
+                    <Badge variant="outline" className="text-xs text-blue-600 border-blue-200 bg-blue-50 ml-1">
+                      <Train className="w-3 h-3 mr-1 inline-block" />
+                      Metro Interchange
+                    </Badge>
+                  )}
+                  {route.occupancyStatus && (
+                    <Badge variant="outline" className={`text-xs ml-auto ${
+                      route.occupancyStatus === 'low' ? 'text-green-600 border-green-200' :
+                      route.occupancyStatus === 'medium' ? 'text-yellow-600 border-yellow-200' :
+                      'text-red-600 border-red-200'
+                    }`}>
+                      {route.occupancyStatus} crowding
+                    </Badge>
                   )}
                 </div>
                 <h3 className="font-semibold text-lg text-ink">{route.name}</h3>
@@ -89,14 +110,23 @@ const SearchResults = () => {
                   <Clock className="w-4 h-4" />
                   <span>~{route.estimatedDurationMinutes} mins</span>
                 </div>
+                {route.predictedDelayMinutes !== undefined && route.predictedDelayMinutes !== 0 && (
+                  <div className={`flex items-center justify-end text-xs mt-1 font-bold ${route.predictedDelayMinutes > 0 ? 'text-red-600' : 'text-transit-green'}`}>
+                    {route.predictedDelayMinutes > 0 ? `+${route.predictedDelayMinutes} min delay` : `${route.predictedDelayMinutes} min early`} (ETA Engine)
+                  </div>
+                )}
               </div>
             </div>
             
-            <div className="flex justify-end pt-4 border-t border-gray-100">
+            <div className="flex justify-between pt-4 border-t border-gray-100">
+              <Button variant="outline" className="flex items-center gap-2 text-signal-amber border-signal-amber hover:bg-yellow-50" onClick={handleNotify}>
+                <Bell className="w-4 h-4" />
+                {t('bus.notify')}
+              </Button>
               <Link to={`/track/${route._id}`}>
                 <Button variant="accent" className="flex items-center gap-2">
                   <Map className="w-4 h-4" />
-                  View on Map
+                  {t('track.live')}
                 </Button>
               </Link>
             </div>

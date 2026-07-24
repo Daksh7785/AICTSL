@@ -2,8 +2,13 @@ const express = require('express');
 const router = express.Router();
 const Stop = require('../models/Stop');
 const Route = require('../models/Route');
+const Complaint = require('../models/Complaint');
+const ServiceAlert = require('../models/ServiceAlert');
+const { predictDelay } = require('../services/etaPredictor');
+const { predictOccupancy } = require('../services/occupancyPredictor');
 const NodeCache = require('node-cache');
 const rateLimit = require('express-rate-limit');
+const { auth, isAdmin } = require('../middleware/auth');
 
 // Initialize cache: stops and routes are fairly static, cache for 1 hour
 const apiCache = new NodeCache({ stdTTL: 3600 });
@@ -22,6 +27,12 @@ const searchLimiter = rateLimit({
 });
 
 router.use(generalLimiter);
+
+const { getSurgeConfig } = require('../services/surgeManager');
+
+router.get('/surge', (req, res) => {
+  res.json(getSurgeConfig());
+});
 
 // 1. GET /api/stops
 router.get('/stops', async (req, res) => {
@@ -70,7 +81,7 @@ router.get('/search', searchLimiter, async (req, res) => {
       deletedAt: null
     })
     .select('_id routeNumber name stops baseFare farePerKm frequencyMinutes isWheelchairAccessible')
-    .populate('stops.stopId', '_id location') // Only need location for distance estimation if we used it, but distance is pre-calculated
+    .populate('stops.stopId', '_id location isMetroInterchange') // Only need location for distance estimation if we used it, but distance is pre-calculated
     .lean();
 
     // Filter and map routes where 'from' comes before 'to'
@@ -90,18 +101,38 @@ router.get('/search', searchLimiter, async (req, res) => {
       // Assume 20km/h average speed in city traffic (20km/60min = 1/3 km per min) -> min = distance / (1/3) = distance * 3
       const estimatedDurationMinutes = Math.ceil(distance * 3) + route.frequencyMinutes;
 
-      return {
-        _id: route._id,
-        routeNumber: route.routeNumber,
-        name: route.name,
-        fare: Math.ceil(fare),
-        estimatedDurationMinutes,
-        numberOfStops: toStopIndex - fromStopIndex,
-        isWheelchairAccessible: route.isWheelchairAccessible
-      };
+      return (async () => {
+        let predictedDelayMinutes = 0;
+        let occupancyStatus = 'low';
+        try {
+          const now = new Date();
+          const prediction = await predictDelay(route._id, fromStop.stopId._id, now.getDay(), now.getHours());
+          predictedDelayMinutes = Math.round(prediction.predictedDelayMs / 60000);
+          
+          const occupancy = await predictOccupancy(route._id, now.getDay(), now.getHours());
+          occupancyStatus = occupancy.status;
+        } catch (e) {
+          // Fallback if prediction fails
+          console.error("Prediction error:", e);
+        }
+
+        return {
+          _id: route._id,
+          routeNumber: route.routeNumber,
+          name: route.name,
+          fare: Math.ceil(fare),
+          estimatedDurationMinutes,
+          predictedDelayMinutes,
+          occupancyStatus,
+          numberOfStops: toStopIndex - fromStopIndex,
+          isWheelchairAccessible: route.isWheelchairAccessible,
+          hasMetroInterchange: route.stops.slice(fromStopIndex, toStopIndex + 1).some(s => s.stopId.isMetroInterchange)
+        };
+      })();
     }).filter(r => r !== null);
 
-    res.json(results);
+    const resolvedResults = await Promise.all(results);
+    res.json(resolvedResults.filter(r => r !== null));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -125,9 +156,7 @@ router.get('/routes/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
 
-const { predictDelay } = require('../services/etaPredictor');
 
 // 5. GET /api/routes/:id/predicted-eta?stopId=
 router.get('/routes/:id/predicted-eta', async (req, res) => {
