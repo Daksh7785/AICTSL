@@ -59,6 +59,9 @@ app.use('/api', apiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 io.on('connection', (socket) => {
   logger.info(`Client connected to tracking socket: ${socket.id}`);
   

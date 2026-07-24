@@ -223,13 +223,47 @@ router.get('/routes/:id/predicted-eta', async (req, res) => {
   }
 });
 
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images and videos are allowed as evidence.'));
+    }
+  }
+});
+
 // POST /api/complaints
-router.post('/complaints', async (req, res) => {
+router.post('/complaints', upload.single('evidence'), async (req, res) => {
   try {
     const { routeId, category, description, rating } = req.body;
     const referenceId = `CMP-${Math.floor(1000 + Math.random() * 9000)}`;
+    const evidenceUrl = req.file ? `/uploads/${req.file.filename}` : undefined;
+    
     const complaint = await Complaint.create({
-      routeId, category, description, rating, referenceId
+      routeId, category, description, rating, referenceId, evidenceUrl
     });
     res.json({ referenceId, status: complaint.status });
   } catch (error) {

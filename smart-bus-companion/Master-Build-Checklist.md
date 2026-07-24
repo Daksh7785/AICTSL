@@ -53,7 +53,7 @@ Legend: ⬜ Not started · 🔶 In progress / partially done · ✅ Done & teste
 | 23 | Code Quality Tooling & Local Dev via Docker | ✅ |
 | 24 | API Documentation (Swagger/OpenAPI + Postman) | ✅ |
 | 25 | Client-Side Data Layer (React Query + Axios) | ✅ |
-| 26 | File Uploads for Complaint Evidence | ⬜ |
+| 26 | File Uploads for Complaint Evidence | ✅ |
 | 27 | External Error Tracking (Sentry) | ⬜ |
 | 28 | GTFS Export | ⬜ |
 | 29 | Migrations & Secrets Hygiene | ✅ |

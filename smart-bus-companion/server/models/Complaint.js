@@ -13,6 +13,7 @@ const complaintSchema = new mongoose.Schema({
     required: [true, 'Complaint category is required'] 
   },
   description: { type: String, required: [true, 'Complaint description is required'] },
+  evidenceUrl: { type: String }, // Optional field for uploaded evidence file
   rating: { type: Number, min: [1, 'Rating must be at least 1'], max: [5, 'Rating cannot exceed 5'], required: [true, 'Rating is required'] },
   referenceId: { type: String, required: [true, 'Reference ID is required'], unique: true },
   status: { 
