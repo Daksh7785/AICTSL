@@ -43,3 +43,5 @@ busSchema.pre('save', async function(next) {
 });
 
 module.exports = mongoose.model('Bus', busSchema);
+
+// style updates
