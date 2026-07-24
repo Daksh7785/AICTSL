@@ -29,7 +29,7 @@ router.get('/stops', async (req, res) => {
     const cachedStops = apiCache.get('stops');
     if (cachedStops) return res.json(cachedStops);
 
-    const stops = await Stop.find({}).select('_id name location city').sort({ name: 1 }).lean();
+    const stops = await Stop.find({ deletedAt: null }).select('_id name location city').sort({ name: 1 }).lean();
     apiCache.set('stops', stops);
     res.json(stops);
   } catch (error) {
@@ -44,6 +44,7 @@ router.get('/stops/nearby', async (req, res) => {
     if (!lat || !lng) return res.status(400).json({ error: 'lat and lng required' });
 
     const stops = await Stop.find({
+      deletedAt: null,
       location: {
         $near: {
           $geometry: { type: 'Point', coordinates: [parseFloat(lng), parseFloat(lat)] },
@@ -65,7 +66,8 @@ router.get('/search', searchLimiter, async (req, res) => {
 
     // Find routes that contain both stops
     const routes = await Route.find({
-      'stops.stopId': { $all: [from, to] }
+      'stops.stopId': { $all: [from, to] },
+      deletedAt: null
     })
     .select('_id routeNumber name stops baseFare farePerKm frequencyMinutes isWheelchairAccessible')
     .populate('stops.stopId', '_id location') // Only need location for distance estimation if we used it, but distance is pre-calculated
@@ -112,7 +114,7 @@ router.get('/routes/:id', async (req, res) => {
     const cachedRoute = apiCache.get(cacheKey);
     if (cachedRoute) return res.json(cachedRoute);
 
-    const route = await Route.findById(req.params.id)
+    const route = await Route.findOne({ _id: req.params.id, deletedAt: null })
       .select('-__v')
       .populate('stops.stopId', '_id name location city')
       .lean();
@@ -198,7 +200,6 @@ router.get('/complaints', [auth, isAdmin], async (req, res) => {
     const skip = (page - 1) * limit;
 
     const complaints = await Complaint.find(filters)
-      .populate('routeId', 'name routeNumber')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -220,16 +221,34 @@ router.get('/complaints', [auth, isAdmin], async (req, res) => {
 });
 
 // PATCH /api/complaints/:id (Admin)
-router.patch('/complaints/:id', [auth, isAdmin], async (req, res) => {
+router.patch('/complaints/:id', [auth, isAdmin], async (req, res, next) => {
+  const mongoose = require('mongoose');
+  const session = await mongoose.startSession();
+  session.startTransaction();
   try {
-    const complaint = await Complaint.findByIdAndUpdate(
-      req.params.id, 
-      { status: req.body.status },
-      { new: true }
-    );
+    const complaint = await Complaint.findById(req.params.id).session(session);
+    if (!complaint) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: 'Complaint not found' });
+    }
+    
+    complaint.status = req.body.status;
+    complaint.updatedBy = req.user.id;
+    complaint.statusHistory.push({
+      status: req.body.status,
+      changedBy: req.user.id
+    });
+    
+    await complaint.save({ session });
+    await session.commitTransaction();
+    session.endSession();
+    
     res.json(complaint);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    await session.abortTransaction();
+    session.endSession();
+    next(error);
   }
 });
 
@@ -249,7 +268,8 @@ router.get('/alerts/active', async (req, res) => {
 // POST /api/alerts (Admin)
 router.post('/alerts', [auth, isAdmin], async (req, res) => {
   try {
-    const alert = await ServiceAlert.create(req.body);
+    const alertData = { ...req.body, createdBy: req.user.id };
+    const alert = await ServiceAlert.create(alertData);
     await alert.populate('routeId', 'name routeNumber');
     
     const io = req.app.get('io');
@@ -266,7 +286,8 @@ router.post('/alerts', [auth, isAdmin], async (req, res) => {
 // PATCH /api/alerts/:id (Admin)
 router.patch('/alerts/:id', [auth, isAdmin], async (req, res) => {
   try {
-    const alert = await ServiceAlert.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('routeId', 'name routeNumber');
+    const updateData = { ...req.body, updatedBy: req.user.id };
+    const alert = await ServiceAlert.findByIdAndUpdate(req.params.id, updateData, { new: true }).populate('routeId', 'name routeNumber');
     
     const io = req.app.get('io');
     if (io) {
@@ -274,6 +295,43 @@ router.patch('/alerts/:id', [auth, isAdmin], async (req, res) => {
     }
     
     res.json(alert);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/stops/:id (Admin)
+router.delete('/stops/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const inUse = await Route.findOne({ 'stops.stopId': req.params.id, deletedAt: null });
+    if (inUse) {
+      return res.status(400).json({ error: `Cannot delete stop: It is used by active route ${inUse.routeNumber}` });
+    }
+    const stop = await Stop.findById(req.params.id);
+    if (!stop) return res.status(404).json({ error: 'Stop not found' });
+    stop.deletedAt = new Date();
+    await stop.save();
+    apiCache.del('stops');
+    res.json({ message: 'Stop deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/routes/:id (Admin)
+router.delete('/routes/:id', [auth, isAdmin], async (req, res) => {
+  try {
+    const Bus = require('../models/Bus');
+    const inUse = await Bus.findOne({ routeId: req.params.id, status: { $ne: 'out_of_service' } });
+    if (inUse) {
+      return res.status(400).json({ error: `Cannot delete route: It is assigned to active bus ${inUse.busNumber}` });
+    }
+    const route = await Route.findById(req.params.id);
+    if (!route) return res.status(404).json({ error: 'Route not found' });
+    route.deletedAt = new Date();
+    await route.save();
+    apiCache.del(`route_${req.params.id}`);
+    res.json({ message: 'Route deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
