@@ -8,7 +8,7 @@ const AutocompleteInput = ({ label, value, onChange, onSelect, options, placehol
 
   return (
     <div className="relative flex flex-col mb-4">
-      {label && <label className="mb-1 text-sm font-medium text-gray-700">{label}</label>}
+      {label && <label className="mb-1 text-sm font-semibold text-transit-ink">{label}</label>}
       <input
         type="text"
         value={value}
@@ -16,7 +16,7 @@ const AutocompleteInput = ({ label, value, onChange, onSelect, options, placehol
         onFocus={() => setShowOptions(true)}
         onBlur={() => setTimeout(() => setShowOptions(false), 200)}
         placeholder={placeholder}
-        className="px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-lg"
+        className="px-3 py-3 bg-white border-2 border-gray-200 rounded-md focus:outline-none focus:border-transit-ink transition-colors text-lg font-mono-data"
       />
       {showOptions && options.length > 0 && (
         <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto top-full mt-1">
