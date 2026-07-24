@@ -94,6 +94,8 @@ const Track = () => {
     const socketUrl = import.meta.env.DEV ? 'http://localhost:5000' : '/';
     socketRef.current = io(socketUrl);
 
+    socketRef.current.emit('joinRoute', routeId);
+
     socketRef.current.on('busPositionUpdate', (data) => {
       if (data.routeId === routeId) {
         setBuses(prev => ({
@@ -104,7 +106,10 @@ const Track = () => {
     });
 
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      if (socketRef.current) {
+        socketRef.current.emit('leaveRoute', routeId);
+        socketRef.current.disconnect();
+      }
     };
   }, [routeId]);
 

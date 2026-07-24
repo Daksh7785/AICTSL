@@ -3,6 +3,7 @@ const Route = require('../models/Route');
 const Bus = require('../models/Bus');
 const Stop = require('../models/Stop');
 const ArrivalLog = require('../models/ArrivalLog');
+const logger = require('../utils/logger');
 
 /**
  * ARCHITECTURE NOTE:
@@ -23,7 +24,7 @@ async function startBusSimulator(io) {
     // 1. Fetch all routes and populate their stops to get coordinates
     const routes = await Route.find().populate('stops.stopId');
     if (!routes || routes.length === 0) {
-      console.log('No routes found for simulation. Waiting...');
+      logger.info('No routes found for simulation. Waiting...');
       return;
     }
 
@@ -59,9 +60,9 @@ async function startBusSimulator(io) {
       simulateMovement(activeBuses, io);
     }, 5000);
 
-    console.log(`Started bus simulation for ${activeBuses.size} buses.`);
+    logger.info(`Started bus simulation for ${activeBuses.size} buses.`);
   } catch (error) {
-    console.error('Error starting bus simulator:', error);
+    logger.error(error, 'Error starting bus simulator');
   }
 }
 
@@ -69,6 +70,7 @@ function simulateMovement(activeBuses, io) {
   // Speed roughly 20 km/h in city traffic, scaled for a 5 second tick
   // We'll just step the progress by a fixed amount for demo purposes
   const STEP = 0.1; 
+  const bulkOperations = [];
 
   activeBuses.forEach(async (state, busId) => {
     const { bus, route, delayMinutes } = state;
@@ -108,11 +110,11 @@ function simulateMovement(activeBuses, io) {
           hourOfDay
         });
       } catch (err) {
-        console.error("Error logging arrival:", err);
+        logger.error(err, 'Error logging arrival');
       }
     }
 
-    // Interpolate position between currentStop and nextStop
+// Interpolate position between currentStop and nextStop
     const currentStop = route.stops[currentStopIndex].stopId;
     const nextStopIndex = currentStopIndex + direction;
     
@@ -131,15 +133,16 @@ function simulateMovement(activeBuses, io) {
        bus.currentPosition.coordinates = [currentLon, currentLat];
        bus.lastUpdated = new Date();
 
-       // Update DB asynchronously (fire and forget for simulator)
-       Bus.updateOne(
-         { _id: bus._id },
-         { currentPosition: bus.currentPosition, lastUpdated: bus.lastUpdated }
-       ).catch(err => console.error("Error updating bus position in DB:", err));
+       // We will bulk write all buses later in this function
+       bulkOperations.push({
+         updateOne: {
+           filter: { _id: bus._id },
+           update: { $set: { currentPosition: bus.currentPosition, lastUpdated: bus.lastUpdated } }
+         }
+       });
 
-       // Emit Socket.io event
-       // Note: Leaflet expects [lat, lng], GeoJSON is [lng, lat]. We emit [lat, lng] for easy client consumption.
-       io.emit('busPositionUpdate', {
+       // Emit Socket.io event to the specific route room
+       io.to(route._id.toString()).emit('busPositionUpdate', {
          busId: bus._id,
          routeId: route._id,
          position: [currentLat, currentLon],
@@ -150,6 +153,12 @@ function simulateMovement(activeBuses, io) {
     // Save updated state back
     activeBuses.set(busId, { ...state, currentStopIndex, direction, progress });
   });
+  
+  if (bulkOperations.length > 0) {
+    Bus.bulkWrite(bulkOperations).catch(err => {
+      logger.error(err, 'Error bulk updating bus positions');
+    });
+  }
 }
 
 module.exports = { startBusSimulator };
