@@ -141,7 +141,7 @@ const Track = () => {
         <div>
           <div className="flex items-center gap-4">
             <RouteChip routeNumber={route.routeNumber} colorHex={route.colorHex} />
-            <Badge variant="primary" className="animate-pulse flex items-center gap-1 bg-green-100 text-transit-green border-green-200">
+            <Badge variant="primary" className="animate-pulse flex items-center gap-1 bg-transit-green/20 text-transit-green border-transit-green/30">
               <span className="w-2 h-2 rounded-full bg-transit-green block"></span> Live
             </Badge>
           </div>
@@ -156,7 +156,7 @@ const Track = () => {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           />
           
-          <Polyline positions={positions} color="#0B3D91" weight={4} opacity={0.6} />
+          <Polyline positions={positions} color="var(--transit-ink)" weight={4} opacity={0.6} />
 
           {route.stops.map((stopInfo) => (
             <Marker 
