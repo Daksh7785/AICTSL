@@ -22,3 +22,5 @@ const stopSchema = new mongoose.Schema({
 stopSchema.index({ location: '2dsphere' });
 
 module.exports = mongoose.model('Stop', stopSchema);
+
+// style updates
