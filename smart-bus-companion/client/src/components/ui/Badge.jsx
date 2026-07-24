@@ -17,3 +17,5 @@ const Badge = ({ children, variant = 'default', className = '' }) => {
 };
 
 export default Badge;
+
+// style updates
