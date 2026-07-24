@@ -10,12 +10,30 @@ const User = require('./models/User');
 dotenv.config();
 
 const stopsData = [
+  { name: 'Niranjanpur Circle', location: { type: 'Point', coordinates: [75.897, 22.775] } },
+  { name: 'Aranya Nagar', location: { type: 'Point', coordinates: [75.898, 22.768] } },
+  { name: 'IDA Park', location: { type: 'Point', coordinates: [75.896, 22.760] } },
+  { name: 'Vijay Nagar Square', location: { type: 'Point', coordinates: [75.8953, 22.7533] } },
+  { name: 'Bhamori', location: { type: 'Point', coordinates: [75.893, 22.748] } },
+  { name: 'Patni Pura', location: { type: 'Point', coordinates: [75.888, 22.740] } },
+  { name: 'Malwa Mill Square', location: { type: 'Point', coordinates: [75.880, 22.730] } },
+  { name: 'Rajkumar Bridge', location: { type: 'Point', coordinates: [75.875, 22.722] } },
+  { name: 'Juni Indore', location: { type: 'Point', coordinates: [75.870, 22.715] } },
+  { name: 'Collectorate Office', location: { type: 'Point', coordinates: [75.865, 22.710] } },
+  { name: 'Mhow Naka', location: { type: 'Point', coordinates: [75.860, 22.700] } },
+  { name: 'Dusshera Maidan', location: { type: 'Point', coordinates: [75.855, 22.690] } },
+  { name: 'Annapurna Temple', location: { type: 'Point', coordinates: [75.850, 22.680] } },
+  { name: 'Ring Road', location: { type: 'Point', coordinates: [75.845, 22.675] } },
+  { name: 'Rajendra Nagar', location: { type: 'Point', coordinates: [75.8184, 22.6738] } },
+  { name: 'Reti Mandi', location: { type: 'Point', coordinates: [75.830, 22.665] } },
+  { name: 'IPS Academy', location: { type: 'Point', coordinates: [75.840, 22.650] } },
+  { name: 'Shramik Colony', location: { type: 'Point', coordinates: [75.850, 22.645] } },
+  { name: 'Rajiv Gandhi Square', location: { type: 'Point', coordinates: [75.860, 22.640] } },
   { name: 'Rajwada', location: { type: 'Point', coordinates: [75.8546, 22.7183] } },
   { name: 'Indore Junction Railway Station', location: { type: 'Point', coordinates: [75.8677, 22.7177] } },
   { name: 'Vijay Nagar', location: { type: 'Point', coordinates: [75.8953, 22.7533] } },
   { name: 'Palasia', location: { type: 'Point', coordinates: [75.8821, 22.7231] } },
   { name: 'Bhawarkuan', location: { type: 'Point', coordinates: [75.8682, 22.6888] } },
-  { name: 'Rajendra Nagar', location: { type: 'Point', coordinates: [75.8184, 22.6738] } },
   { name: 'MR-10', location: { type: 'Point', coordinates: [75.8833, 22.7667] } },
   { name: 'Sarwate Bus Stand', location: { type: 'Point', coordinates: [75.8653, 22.7153] } }
 ];
@@ -46,6 +64,38 @@ const seedDB = async () => {
 
     // Define Routes
     const routesData = [
+      {
+        routeNumber: 'iBus',
+        name: 'Niranjanpur to Rajiv Gandhi Square (BRTS)',
+        baseFare: 10,
+        farePerKm: 1.0,
+        firstBusTime: '07:00',
+        lastBusTime: '23:00',
+        frequencyMinutes: 5,
+        isWheelchairAccessible: true,
+        stops: [
+          { stopId: getStopId('Niranjanpur Circle'), order: 1, distanceFromStartKm: 0 },
+          { stopId: getStopId('Aranya Nagar'), order: 2, distanceFromStartKm: 0.8 },
+          { stopId: getStopId('IDA Park'), order: 3, distanceFromStartKm: 1.5 },
+          { stopId: getStopId('Vijay Nagar Square'), order: 4, distanceFromStartKm: 2.2 },
+          { stopId: getStopId('Bhamori'), order: 5, distanceFromStartKm: 3.0 },
+          { stopId: getStopId('Patni Pura'), order: 6, distanceFromStartKm: 4.0 },
+          { stopId: getStopId('Malwa Mill Square'), order: 7, distanceFromStartKm: 5.0 },
+          { stopId: getStopId('Rajkumar Bridge'), order: 8, distanceFromStartKm: 6.0 },
+          { stopId: getStopId('Juni Indore'), order: 9, distanceFromStartKm: 7.0 },
+          { stopId: getStopId('Collectorate Office'), order: 10, distanceFromStartKm: 7.5 },
+          { stopId: getStopId('Mhow Naka'), order: 11, distanceFromStartKm: 8.5 },
+          { stopId: getStopId('Dusshera Maidan'), order: 12, distanceFromStartKm: 9.5 },
+          { stopId: getStopId('Annapurna Temple'), order: 13, distanceFromStartKm: 10.5 },
+          { stopId: getStopId('Ring Road'), order: 14, distanceFromStartKm: 11.2 },
+          { stopId: getStopId('Rajendra Nagar'), order: 15, distanceFromStartKm: 12.0 },
+          { stopId: getStopId('Reti Mandi'), order: 16, distanceFromStartKm: 13.0 },
+          { stopId: getStopId('IPS Academy'), order: 17, distanceFromStartKm: 14.5 },
+          { stopId: getStopId('Shramik Colony'), order: 18, distanceFromStartKm: 15.5 },
+          { stopId: getStopId('Rajiv Gandhi Square'), order: 19, distanceFromStartKm: 16.5 }
+        ],
+        colorHex: '#0055A4'
+      },
       {
         routeNumber: '11',
         name: 'Rajwada to Vijay Nagar',
@@ -193,12 +243,49 @@ const seedDB = async () => {
     await adminUser.save();
     console.log('Inserted admin user.');
 
+    // Seed Buses
+    const busesData = insertedRoutes.map((route, i) => ({
+      busNumber: `MP09-BS-${1000 + i}`,
+      routeId: route._id,
+      frequencyMinutes: route.frequencyMinutes,
+      isWheelchairAccessible: route.isWheelchairAccessible,
+      currentPosition: { type: 'Point', coordinates: [75.897, 22.775] },
+      status: 'running'
+    }));
+    await Bus.insertMany(busesData);
+    console.log('Inserted buses.');
+
+    // Generate Complaints
+    const complaintsToInsert = [];
+    const complaintCategories = ['delay', 'cleanliness', 'staff_behavior', 'app_issue', 'other'];
+    const complaintStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+    const now = new Date();
+
+    for (let i = 0; i < 300; i++) {
+      const isIBus = Math.random() < 0.6; // 60% of complaints are for iBus
+      const route = isIBus ? insertedRoutes[0] : insertedRoutes[Math.floor(Math.random() * (insertedRoutes.length - 1)) + 1];
+      
+      const referenceId = `CMP-${Math.floor(1000 + Math.random() * 9000)}-${i}`;
+      const status = complaintStatuses[Math.floor(Math.random() * complaintStatuses.length)];
+      
+      complaintsToInsert.push({
+        routeId: route._id,
+        category: complaintCategories[Math.floor(Math.random() * complaintCategories.length)],
+        description: 'Auto-generated complaint for testing',
+        rating: Math.floor(Math.random() * 5) + 1,
+        referenceId,
+        status,
+        statusHistory: [{ status: 'open', changedAt: new Date(now.getTime() - 86400000) }]
+      });
+    }
+    await Complaint.insertMany(complaintsToInsert);
+    console.log(`Inserted ${complaintsToInsert.length} complaints.`);
+
     // Phase 9: Seed historical ArrivalLogs
     const ArrivalLog = require('./models/ArrivalLog');
     await ArrivalLog.deleteMany({});
     
     const logsToInsert = [];
-    const now = new Date();
     
     // For every route, generate logs for the last 5 days
     for (const route of insertedRoutes) {
