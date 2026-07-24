@@ -51,3 +51,5 @@ complaintSchema.pre('save', async function(next) {
 });
 
 module.exports = mongoose.model('Complaint', complaintSchema);
+
+// style updates
