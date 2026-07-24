@@ -15,5 +15,6 @@ const complaintSchema = new mongoose.Schema({
 });
 
 complaintSchema.index({ referenceId: 1 });
+complaintSchema.index({ status: 1, category: 1 });
 
 module.exports = mongoose.model('Complaint', complaintSchema);

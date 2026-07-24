@@ -2,11 +2,35 @@ const express = require('express');
 const router = express.Router();
 const Stop = require('../models/Stop');
 const Route = require('../models/Route');
+const NodeCache = require('node-cache');
+const rateLimit = require('express-rate-limit');
+
+// Initialize cache: stops and routes are fairly static, cache for 1 hour
+const apiCache = new NodeCache({ stdTTL: 3600 });
+
+// Rate limiters
+const generalLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { error: 'Too many requests, please try again later.' }
+});
+
+const searchLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 20, // limit each IP to 20 requests per windowMs for expensive queries
+  message: { error: 'Too many search requests, please try again later.' }
+});
+
+router.use(generalLimiter);
 
 // 1. GET /api/stops
 router.get('/stops', async (req, res) => {
   try {
-    const stops = await Stop.find({}).sort({ name: 1 });
+    const cachedStops = apiCache.get('stops');
+    if (cachedStops) return res.json(cachedStops);
+
+    const stops = await Stop.find({}).select('_id name location city').sort({ name: 1 }).lean();
+    apiCache.set('stops', stops);
     res.json(stops);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -26,7 +50,7 @@ router.get('/stops/nearby', async (req, res) => {
           $maxDistance: parseInt(radiusMeters)
         }
       }
-    });
+    }).select('_id name location city').lean();
     res.json(stops);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -34,7 +58,7 @@ router.get('/stops/nearby', async (req, res) => {
 });
 
 // 3. GET /api/search?from=stopId&to=stopId
-router.get('/search', async (req, res) => {
+router.get('/search', searchLimiter, async (req, res) => {
   try {
     const { from, to } = req.query;
     if (!from || !to) return res.status(400).json({ error: 'from and to stopIds required' });
@@ -42,7 +66,10 @@ router.get('/search', async (req, res) => {
     // Find routes that contain both stops
     const routes = await Route.find({
       'stops.stopId': { $all: [from, to] }
-    }).populate('stops.stopId');
+    })
+    .select('_id routeNumber name stops baseFare farePerKm frequencyMinutes isWheelchairAccessible')
+    .populate('stops.stopId', '_id location') // Only need location for distance estimation if we used it, but distance is pre-calculated
+    .lean();
 
     // Filter and map routes where 'from' comes before 'to'
     const results = routes.map(route => {
@@ -81,8 +108,17 @@ router.get('/search', async (req, res) => {
 // 4. GET /api/routes/:id
 router.get('/routes/:id', async (req, res) => {
   try {
-    const route = await Route.findById(req.params.id).populate('stops.stopId');
+    const cacheKey = `route_${req.params.id}`;
+    const cachedRoute = apiCache.get(cacheKey);
+    if (cachedRoute) return res.json(cachedRoute);
+
+    const route = await Route.findById(req.params.id)
+      .select('-__v')
+      .populate('stops.stopId', '_id name location city')
+      .lean();
     if (!route) return res.status(404).json({ error: 'Route not found' });
+    
+    apiCache.set(cacheKey, route);
     res.json(route);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -157,8 +193,27 @@ router.get('/complaints', [auth, isAdmin], async (req, res) => {
     if (req.query.category) filters.category = req.query.category;
     if (req.query.routeId) filters.routeId = req.query.routeId;
     
-    const complaints = await Complaint.find(filters).populate('routeId', 'name routeNumber').sort({ createdAt: -1 });
-    res.json(complaints);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    const complaints = await Complaint.find(filters)
+      .populate('routeId', 'name routeNumber')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+      
+    const total = await Complaint.countDocuments(filters);
+
+    res.json({
+      complaints,
+      pagination: {
+        total,
+        page,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -181,7 +236,10 @@ router.patch('/complaints/:id', [auth, isAdmin], async (req, res) => {
 // GET /api/alerts/active
 router.get('/alerts/active', async (req, res) => {
   try {
-    const alerts = await ServiceAlert.find({ active: true }).populate('routeId', 'name routeNumber').sort({ createdAt: -1 });
+    const alerts = await ServiceAlert.find({ active: true })
+      .populate('routeId', 'name routeNumber')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(alerts);
   } catch (error) {
     res.status(500).json({ error: error.message });

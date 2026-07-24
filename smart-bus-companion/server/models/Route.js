@@ -18,4 +18,7 @@ const routeSchema = new mongoose.Schema({
 
 });
 
+routeSchema.index({ 'stops.stopId': 1 });
+routeSchema.index({ routeNumber: 1 });
+
 module.exports = mongoose.model('Route', routeSchema);
