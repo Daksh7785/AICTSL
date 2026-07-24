@@ -4,33 +4,37 @@ const arrivalLogSchema = new mongoose.Schema({
   busId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Bus',
-    required: true
+    required: [true, 'Bus ID is required']
   },
   routeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Route',
-    required: true
+    required: [true, 'Route ID is required']
   },
   stopId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Stop',
-    required: true
+    required: [true, 'Stop ID is required']
   },
   scheduledTime: {
     type: Date,
-    required: true
+    required: [true, 'Scheduled time is required']
   },
   actualTime: {
     type: Date,
-    required: true
+    required: [true, 'Actual time is required']
   },
   dayOfWeek: {
     type: Number, // 0 = Sunday, 1 = Monday, etc.
-    required: true
+    min: [0, 'Day of week must be between 0 and 6'],
+    max: [6, 'Day of week must be between 0 and 6'],
+    required: [true, 'Day of week is required']
   },
   hourOfDay: {
     type: Number, // 0-23
-    required: true
+    min: [0, 'Hour must be between 0 and 23'],
+    max: [23, 'Hour must be between 0 and 23'],
+    required: [true, 'Hour of day is required']
   },
   createdAt: {
     type: Date,
