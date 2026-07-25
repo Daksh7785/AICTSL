@@ -18,11 +18,14 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   });
 }
 
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      staleTime: 60000,
+      retry: 2,
       refetchOnWindowFocus: false,
-      retry: 1,
     },
   },
 })
@@ -31,6 +34,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </StrictMode>,
 )

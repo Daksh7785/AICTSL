@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchRoutes } from '../lib/hooks/useSearchRoutes';
 import { Map, Clock, IndianRupee, Accessibility, Bell, Train } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
@@ -15,20 +16,13 @@ const SearchResults = () => {
   const { t } = usePreferences();
   
   const [routes, setRoutes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: fetchedRoutes = [], isLoading: loading } = useSearchRoutes(from, to);
 
   useEffect(() => {
-    if (!from || !to) return;
-    
-    setLoading(true);
-    fetch(`/api/search?from=${from}&to=${to}`)
-      .then(res => res.json())
-      .then(data => {
-        setRoutes(Array.isArray(data) ? data : []);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [from, to]);
+    if (fetchedRoutes.length > 0) {
+      setRoutes(fetchedRoutes);
+    }
+  }, [fetchedRoutes]);
 
   const handleNotify = () => {
     alert(t('bus.notify') + ": You will be alerted when the bus is 5 minutes away.");
