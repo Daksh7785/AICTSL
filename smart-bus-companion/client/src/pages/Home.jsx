@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useStops } from '../lib/hooks/useStops';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
 import { Mic } from 'lucide-react';
 
 const AutocompleteInput = ({ id, label, value, onChange, onSelect, options, placeholder }) => {
@@ -128,12 +128,13 @@ const Home = () => {
   
   const navigate = useNavigate();
 
+  const { data: fetchedStops = [] } = useStops();
+
   useEffect(() => {
-    fetch('/api/stops')
-      .then(res => res.json())
-      .then(data => setStops(Array.isArray(data) ? data : []))
-      .catch(console.error);
-  }, []);
+    if (fetchedStops.length > 0) {
+      setStops(fetchedStops);
+    }
+  }, [fetchedStops]);
 
   const handleSearch = (e) => {
     e.preventDefault();

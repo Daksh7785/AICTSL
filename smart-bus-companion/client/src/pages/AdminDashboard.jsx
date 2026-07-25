@@ -1,39 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAdminStats, useAdminComplaints } from '../lib/hooks/useAdmin';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState(null);
-  const [complaints, setComplaints] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      // Using dummy fetch headers assuming our backend cookie/tokens are sent implicitly if we set credentials to include
-      const [statsRes, compRes] = await Promise.all([
-        fetch('/api/admin/stats', { credentials: 'include' }),
-        fetch('/api/admin/complaints', { credentials: 'include' })
-      ]);
-      
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData);
-      }
-      if (compRes.ok) {
-        const compData = await compRes.json();
-        setComplaints(compData.complaints || []);
-      }
-    } catch (err) {
-      console.error('Failed to fetch admin data', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const queryClient = useQueryClient();
+  const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useAdminStats();
+  const { data: compData, isLoading: loadingComplaints, refetch: refetchComplaints } = useAdminComplaints();
+  
+  const loading = loadingStats || loadingComplaints;
+  const complaints = compData?.complaints || [];
 
   const updateComplaintStatus = async (id, status) => {
     try {
@@ -44,11 +21,16 @@ export default function AdminDashboard() {
         body: JSON.stringify({ status })
       });
       if (res.ok) {
-        fetchData();
+        queryClient.invalidateQueries({ queryKey: ['adminComplaints'] });
       }
     } catch (err) {
       console.error('Update failed', err);
     }
+  };
+
+  const handleRefresh = () => {
+    refetchStats();
+    refetchComplaints();
   };
 
   if (loading) {
@@ -59,7 +41,7 @@ export default function AdminDashboard() {
     <div className="max-w-6xl mx-auto p-4 space-y-6">
       <div className="flex justify-between items-center border-b pb-4 border-gray-200">
         <h1 className="text-3xl font-bold text-transit-ink">Transit Admin Dashboard</h1>
-        <Button onClick={fetchData} className="bg-signal-amber text-transit-ink hover:bg-yellow-400">
+        <Button onClick={handleRefresh} className="bg-signal-amber text-transit-ink hover:bg-yellow-400">
           Refresh Data
         </Button>
       </div>

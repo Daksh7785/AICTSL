@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import { useRoute, usePredictedETA } from '../lib/hooks/useRoute';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import { io } from 'socket.io-client';
@@ -8,7 +9,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import BusOnRibbon from '../components/ui/BusOnRibbon';
 import RouteChip from '../components/ui/RouteChip';
-import { Bus, MapPin } from 'lucide-react';
+
 
 const stopIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
@@ -27,21 +28,7 @@ const busIcon = new L.Icon({
 });
 
 const StopPopup = ({ routeId, stopInfo }) => {
-  const [eta, setEta] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch(`/api/routes/${routeId}/predicted-eta?stopId=${stopInfo.stopId._id}`)
-      .then(res => res.json())
-      .then(data => {
-        setEta(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, [routeId, stopInfo.stopId._id]);
+  const { data: eta, isLoading: loading } = usePredictedETA(routeId, stopInfo.stopId._id);
 
   return (
     <Popup>
@@ -75,20 +62,11 @@ const StopPopup = ({ routeId, stopInfo }) => {
 
 const Track = () => {
   const { routeId } = useParams();
-  const [route, setRoute] = useState(null);
+  const { data: route, isLoading: loading } = useRoute(routeId);
   const [buses, setBuses] = useState({}); // busId -> position state
-  const [loading, setLoading] = useState(true);
   const socketRef = useRef(null);
 
   useEffect(() => {
-    // 1. Fetch route details
-    fetch(`/api/routes/${routeId}`)
-      .then(res => res.json())
-      .then(data => {
-        setRoute(data);
-        setLoading(false);
-      })
-      .catch(console.error);
 
     // 2. Setup Socket.io
     const socketUrl = import.meta.env.DEV ? 'http://localhost:5000' : '/';
